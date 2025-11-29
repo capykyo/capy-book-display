@@ -8,15 +8,36 @@ import type {
 import { getTokenFromCookie } from '@/lib/auth/token';
 
 /**
+ * 判断是否为开发环境
+ * 安全地检查环境，避免 process is not defined 错误
+ * 
+ * @returns 如果是开发环境返回 true，否则返回 false
+ */
+function isDevelopment(): boolean {
+  // 检查 process 是否存在
+  if (typeof process !== 'undefined' && process.env) {
+    // 如果 process 存在，使用 NODE_ENV
+    return process.env.NODE_ENV === 'development';
+  }
+  
+  // 如果 process 不存在（客户端环境），通过 hostname 判断
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+  }
+  
+  // 默认返回 false（生产环境）
+  return false;
+}
+
+/**
  * 获取 API URL（根据环境）
  * 直接请求外部 API 服务器（已支持 CORS）
  * 
  * @returns API URL
  */
 function getApiUrl(): string {
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  
-  if (isDevelopment) {
+  if (isDevelopment()) {
     return process.env.NEXT_PUBLIC_API_URL_DEV || 'http://localhost:3000/api/extract';
   } else {
     return process.env.NEXT_PUBLIC_API_URL_PROD || 'https://capy-book-fetch.vercel.app/api/extract';
@@ -29,13 +50,16 @@ function getApiUrl(): string {
  * @returns 如果需要认证返回 true，否则返回 false
  */
 function needAuth(): boolean {
-  const isDevelopment = process.env.NODE_ENV === 'development';
   // 开发环境不需要认证，生产环境需要认证
-  return !isDevelopment;
+  return !isDevelopment();
 }
 
 /**
  * 获取认证 Token
+ * 
+ * 优先级：
+ * 1. 从 Cookie 读取 Token（如果存在）
+ * 2. 从环境变量 NEXT_PUBLIC_JWT_TOKEN 读取（如果 Cookie 中没有）
  * 
  * @returns JWT Token，如果获取失败返回 null
  */
@@ -45,12 +69,19 @@ async function getAuthToken(): Promise<string | null> {
   }
 
   try {
-    // 从 Cookie 读取 Token
-    const token = getTokenFromCookie();
+    // 首先尝试从 Cookie 读取 Token
+    let token = getTokenFromCookie();
     
+    // 如果 Cookie 中没有 Token，尝试从环境变量读取
     if (!token) {
-      console.warn('[API Client] No token found in cookie');
-      return null;
+      const envToken = process.env.NEXT_PUBLIC_JWT_TOKEN;
+      if (envToken) {
+        console.log('[API Client] Using JWT_TOKEN from environment variable');
+        token = envToken;
+      } else {
+        console.warn('[API Client] No token found in cookie or environment variable');
+        return null;
+      }
     }
 
     // 注意：如果 Token 在 Cookie 中是加密存储的，这里需要先解密
@@ -146,15 +177,12 @@ export async function extractArticle(
     console.error('Failed to extract article:', error);
     
     const apiUrl = getApiUrl();
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    
-    let errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     let userMessage = `网络请求失败: ${errorMessage}`;
     
     // 针对 "Failed to fetch" 错误提供更详细的提示
     if (errorMessage === 'Failed to fetch' || errorMessage.includes('fetch')) {
-      const isDevelopment = process.env.NODE_ENV === 'development';
-      if (isDevelopment) {
+      if (isDevelopment()) {
         userMessage = `无法连接到开发服务器 (${apiUrl})。请确保：1. API 服务器正在运行；2. 服务器地址正确；3. 服务器已配置 CORS 支持。`;
       } else {
         userMessage = `无法连接到 API 服务器 (${apiUrl})。请检查网络连接和 CORS 配置。`;
