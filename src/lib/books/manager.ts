@@ -103,17 +103,26 @@ export function updateBook(
   const bookIndex = books.findIndex((book) => book.bookId === bookId);
 
   if (bookIndex === -1) {
+    console.warn('[manager.ts] updateBook: 书籍不存在', bookId);
     return false;
   }
 
   // 更新书籍信息
+  const oldBook = books[bookIndex];
   books[bookIndex] = {
     ...books[bookIndex],
     ...updates,
   };
 
-  saveBooks(books);
-  return true;
+  const success = saveBooks(books);
+  console.log('[manager.ts] updateBook:', {
+    bookId,
+    updates,
+    oldBook: { currentChapter: oldBook.currentChapter, lastReadUrl: oldBook.lastReadUrl },
+    newBook: { currentChapter: books[bookIndex].currentChapter, lastReadUrl: books[bookIndex].lastReadUrl },
+    success,
+  });
+  return success;
 }
 
 /**

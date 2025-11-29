@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { UrlInput } from '@/components/books/UrlInput';
 import { BookList } from '@/components/books/BookList';
 import { ArticleReader } from '@/components/article/ArticleReader';
+import { BooksProvider } from '@/contexts/BooksContext';
+import { ReadingProgressProvider } from '@/contexts/ReadingProgressContext';
 import { BookOpen } from 'lucide-react';
 
 /**
  * 主页面组件
  * 集成书籍管理和文章阅读功能
  */
-export default function Home() {
+function HomeContent() {
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
   const [showReader, setShowReader] = useState(false);
 
@@ -76,5 +78,18 @@ export default function Home() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * 主页面（带 Provider）
+ */
+export default function Home() {
+  return (
+    <BooksProvider>
+      <ReadingProgressProvider>
+        <HomeContent />
+      </ReadingProgressProvider>
+    </BooksProvider>
   );
 }

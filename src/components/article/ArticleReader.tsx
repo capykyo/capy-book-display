@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ArticleHeader } from './ArticleHeader';
 import { ArticleContent } from './ArticleContent';
 import { ArticleNavigation } from './ArticleNavigation';
@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useArticle } from '@/hooks/useArticle';
 import { useReadingProgress } from '@/hooks/useReadingProgress';
+import { useBooks } from '@/hooks/useBooks';
 import { parseBookUrl } from '@/lib/books/urlParser';
 import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -29,27 +30,56 @@ export interface ArticleReaderProps {
 export function ArticleReader({ url, className }: ArticleReaderProps) {
   const { article, isLoading, error, fetchArticle } = useArticle();
   const { saveProgress } = useReadingProgress();
+  const { updateBookInfo } = useBooks();
+  
+  // 维护当前 URL 状态，用于跟踪当前阅读的章节
+  const [currentUrl, setCurrentUrl] = useState<string>(url);
+
+  // 当外部传入的 url prop 改变时，更新当前 URL
+  useEffect(() => {
+    if (url) {
+      setCurrentUrl(url);
+    }
+  }, [url]);
 
   // 加载文章
   useEffect(() => {
-    if (url) {
-      fetchArticle(url);
+    if (currentUrl) {
+      fetchArticle(currentUrl);
     }
-  }, [url, fetchArticle]);
+  }, [currentUrl, fetchArticle]);
 
-  // 保存阅读进度
+  // 保存阅读进度并同步更新书籍信息
   useEffect(() => {
-    if (article && url) {
-      const parsed = parseBookUrl(url);
+    if (article && currentUrl) {
+      const parsed = parseBookUrl(currentUrl);
       if (parsed) {
-        saveProgress(parsed.bookId, parsed.chapterNumber, url);
+        console.log('[ArticleReader] 保存阅读进度:', {
+          bookId: parsed.bookId,
+          chapterNumber: parsed.chapterNumber,
+          url: currentUrl,
+        });
+        // 保存阅读进度
+        saveProgress(parsed.bookId, parsed.chapterNumber, currentUrl).then((success) => {
+          console.log('[ArticleReader] 阅读进度保存结果:', success);
+        });
+        // 同步更新书籍信息
+        updateBookInfo(parsed.bookId, {
+          currentChapter: parsed.chapterNumber,
+          lastReadUrl: currentUrl,
+        }).then((success) => {
+          console.log('[ArticleReader] 书籍信息更新结果:', success);
+        });
+      } else {
+        console.warn('[ArticleReader] URL 解析失败:', currentUrl);
       }
     }
-  }, [article, url, saveProgress]);
+  }, [article, currentUrl, saveProgress, updateBookInfo]);
 
   // 处理章节导航
   const handleNavigate = (newUrl: string) => {
-    fetchArticle(newUrl);
+    // 更新当前 URL 状态
+    setCurrentUrl(newUrl);
     // 滚动到顶部
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

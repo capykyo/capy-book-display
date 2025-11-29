@@ -1,13 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  getAllProgress,
-  getProgress,
-  saveProgress as saveProgressToStorage,
-  updateProgress as updateProgressInStorage,
-  removeProgress as removeProgressFromStorage,
-} from '@/lib/books/progress';
+import { useReadingProgressContext } from '@/contexts/ReadingProgressContext';
 import type { ReadingProgress } from '@/types/book';
 
 /**
@@ -36,6 +29,9 @@ export interface UseReadingProgressReturn {
 /**
  * 阅读进度管理 Hook
  * 
+ * 这是一个便捷的 Hook，内部使用 ReadingProgressContext 来管理状态。
+ * 确保在 ReadingProgressProvider 内使用此 Hook。
+ * 
  * @returns 阅读进度状态和管理方法
  * 
  * @example
@@ -49,105 +45,6 @@ export interface UseReadingProgressReturn {
  * await saveProgress('xuanjiezhimen', 5, 'https://quanben.io/n/xuanjiezhimen/5.html')
  */
 export function useReadingProgress(): UseReadingProgressReturn {
-  const [allProgress, setAllProgress] = useState<Record<string, ReadingProgress>>({});
-  const [isLoading, setIsLoading] = useState(true);
-
-  // 从 localStorage 加载阅读进度
-  const loadProgress = useCallback(() => {
-    setIsLoading(true);
-    try {
-      const progress = getAllProgress();
-      setAllProgress(progress);
-    } catch (error) {
-      console.error('Failed to load reading progress:', error);
-      setAllProgress({});
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // 初始化时加载阅读进度
-  useEffect(() => {
-    loadProgress();
-  }, [loadProgress]);
-
-  // 获取指定书籍的阅读进度
-  const getBookProgress = useCallback(
-    (bookId: string): ReadingProgress | undefined => {
-      return getProgress(bookId);
-    },
-    []
-  );
-
-  // 保存阅读进度
-  const saveProgress = useCallback(
-    async (
-      bookId: string,
-      chapterNumber: number,
-      lastReadUrl: string
-    ): Promise<boolean> => {
-      try {
-        const success = saveProgressToStorage(bookId, chapterNumber, lastReadUrl);
-        if (success) {
-          // 刷新进度列表
-          loadProgress();
-        }
-        return success;
-      } catch (error) {
-        console.error('Failed to save reading progress:', error);
-        return false;
-      }
-    },
-    [loadProgress]
-  );
-
-  // 更新阅读进度
-  const updateProgress = useCallback(
-    async (
-      bookId: string,
-      updates: Partial<Pick<ReadingProgress, 'currentChapter' | 'lastReadUrl'>>
-    ): Promise<boolean> => {
-      try {
-        const success = updateProgressInStorage(bookId, updates);
-        if (success) {
-          // 刷新进度列表
-          loadProgress();
-        }
-        return success;
-      } catch (error) {
-        console.error('Failed to update reading progress:', error);
-        return false;
-      }
-    },
-    [loadProgress]
-  );
-
-  // 删除阅读进度
-  const removeProgress = useCallback(
-    async (bookId: string): Promise<boolean> => {
-      try {
-        const success = removeProgressFromStorage(bookId);
-        if (success) {
-          // 刷新进度列表
-          loadProgress();
-        }
-        return success;
-      } catch (error) {
-        console.error('Failed to remove reading progress:', error);
-        return false;
-      }
-    },
-    [loadProgress]
-  );
-
-  return {
-    allProgress,
-    isLoading,
-    getBookProgress,
-    saveProgress,
-    updateProgress,
-    removeProgress,
-    refreshProgress: loadProgress,
-  };
+  return useReadingProgressContext();
 }
 

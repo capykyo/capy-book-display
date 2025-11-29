@@ -5,40 +5,62 @@ import type {
   ExtractArticleResponse,
   ExtractArticleErrorResponse,
 } from '@/types/api';
+import { getTokenFromCookie } from '@/lib/auth/token';
 
 /**
  * 获取 API URL（根据环境）
- * 使用 Next.js API 路由作为代理，避免 CORS 问题
+ * 直接请求外部 API 服务器（已支持 CORS）
  * 
  * @returns API URL
  */
 function getApiUrl(): string {
-  // 使用 Next.js API 路由作为代理
-  // 这样请求从服务器端发起，不受浏览器 CORS 限制
-  return '/api/extract';
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  if (isDevelopment) {
+    return process.env.NEXT_PUBLIC_API_URL_DEV || 'http://localhost:3000/api/extract';
+  } else {
+    return process.env.NEXT_PUBLIC_API_URL_PROD || 'https://capy-book-fetch.vercel.app/api/extract';
+  }
 }
 
 /**
  * 判断是否需要认证
  * 
- * @deprecated 认证现在由服务器端代理处理，客户端不再需要处理认证
  * @returns 如果需要认证返回 true，否则返回 false
  */
 function needAuth(): boolean {
-  // 认证现在由 Next.js API 路由代理处理
-  return false;
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  // 开发环境不需要认证，生产环境需要认证
+  return !isDevelopment;
 }
 
 /**
  * 获取认证 Token
  * 
- * @deprecated 认证现在由服务器端代理处理，客户端不再需要处理认证
  * @returns JWT Token，如果获取失败返回 null
  */
 async function getAuthToken(): Promise<string | null> {
-  // 认证现在由 Next.js API 路由代理处理
-  // 如果将来需要从客户端 Cookie 传递 Token，可以在这里实现
-  return null;
+  if (!needAuth()) {
+    return null;
+  }
+
+  try {
+    // 从 Cookie 读取 Token
+    const token = getTokenFromCookie();
+    
+    if (!token) {
+      console.warn('[API Client] No token found in cookie');
+      return null;
+    }
+
+    // 注意：如果 Token 在 Cookie 中是加密存储的，这里需要先解密
+    // 目前假设 Cookie 中存储的是原始 JWT Token
+    // 如果实际是加密的，需要调用解密函数
+    return token;
+  } catch (error) {
+    console.error('[API Client] Failed to get auth token:', error);
+    return null;
+  }
 }
 
 /**
@@ -65,14 +87,23 @@ export async function extractArticle(
     console.log('[API Client] Article URL:', url);
     
     // 准备请求头
-    // 注意：认证现在由 Next.js API 路由代理处理
-    // 客户端不再需要处理 JWT Token
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
 
-    // 发送请求
+    // 生产环境添加认证 Token
+    if (needAuth()) {
+      const token = await getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log('[API Client] Added Authorization header');
+      } else {
+        console.warn('[API Client] No token available for authentication');
+      }
+    }
+
+    // 发送请求（直接请求外部 API，不再通过 Next.js API 路由）
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers,
@@ -122,10 +153,11 @@ export async function extractArticle(
     
     // 针对 "Failed to fetch" 错误提供更详细的提示
     if (errorMessage === 'Failed to fetch' || errorMessage.includes('fetch')) {
+      const isDevelopment = process.env.NODE_ENV === 'development';
       if (isDevelopment) {
-        userMessage = `无法连接到开发服务器 (${apiUrl})。请确保：1. API 服务器正在运行；2. 服务器地址正确；3. 没有 CORS 限制。`;
+        userMessage = `无法连接到开发服务器 (${apiUrl})。请确保：1. API 服务器正在运行；2. 服务器地址正确；3. 服务器已配置 CORS 支持。`;
       } else {
-        userMessage = `无法连接到 API 服务器 (${apiUrl})。请检查网络连接。`;
+        userMessage = `无法连接到 API 服务器 (${apiUrl})。请检查网络连接和 CORS 配置。`;
       }
     }
     

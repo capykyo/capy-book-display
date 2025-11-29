@@ -47,7 +47,15 @@ export function saveProgress(
   };
 
   allProgress[bookId] = progress;
-  return setItem(STORAGE_KEYS.READING_PROGRESS, allProgress);
+  const success = setItem(STORAGE_KEYS.READING_PROGRESS, allProgress);
+  console.log('[progress.ts] saveProgress:', {
+    bookId,
+    chapterNumber,
+    lastReadUrl,
+    success,
+    savedData: allProgress[bookId],
+  });
+  return success;
 }
 
 /**

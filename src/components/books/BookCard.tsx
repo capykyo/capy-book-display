@@ -62,6 +62,9 @@ export function BookCard({ book, onContinueReading }: BookCardProps) {
   const { getBookProgress } = useReadingProgress();
 
   const progress = getBookProgress(book.bookId);
+  // 优先使用阅读进度中的数据，如果没有则使用书籍数据
+  const currentChapter = progress?.currentChapter ?? book.currentChapter;
+  const lastReadUrl = progress?.lastReadUrl ?? book.lastReadUrl;
   const lastReadTime = progress?.updatedAt || book.addedAt;
 
   const handleDelete = async () => {
@@ -79,8 +82,8 @@ export function BookCard({ book, onContinueReading }: BookCardProps) {
   };
 
   const handleContinueReading = () => {
-    if (book.lastReadUrl && onContinueReading) {
-      onContinueReading(book.lastReadUrl);
+    if (lastReadUrl && onContinueReading) {
+      onContinueReading(lastReadUrl);
     }
   };
 
@@ -95,7 +98,7 @@ export function BookCard({ book, onContinueReading }: BookCardProps) {
             </span>
           </CardTitle>
           <CardDescription>
-            当前章节：第 {book.currentChapter} 章
+            当前章节：第 {currentChapter} 章
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -109,7 +112,7 @@ export function BookCard({ book, onContinueReading }: BookCardProps) {
             variant="default"
             className="flex-1"
             onClick={handleContinueReading}
-            disabled={!book.lastReadUrl}
+            disabled={!lastReadUrl}
           >
             继续阅读
           </Button>
