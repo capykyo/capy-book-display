@@ -129,9 +129,10 @@ export function updateBook(
  * 保存书籍列表到 localStorage
  * 
  * @param books - 书籍列表
+ * @returns 是否保存成功
  */
-function saveBooks(books: BookList): void {
-  setItem(STORAGE_KEYS.BOOKS, books);
+function saveBooks(books: BookList): boolean {
+  return setItem(STORAGE_KEYS.BOOKS, books);
 }
 
 /**
