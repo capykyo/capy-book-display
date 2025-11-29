@@ -47,7 +47,9 @@ describe('urlParser', () => {
 
     it('should return null for empty or null input', () => {
       expect(parseBookUrl('')).toBeNull()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(parseBookUrl(null as any)).toBeNull()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(parseBookUrl(undefined as any)).toBeNull()
     })
   })

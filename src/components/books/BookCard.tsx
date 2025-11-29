@@ -15,7 +15,6 @@ import { useBooks } from '@/hooks/useBooks';
 import { useReadingProgress } from '@/hooks/useReadingProgress';
 import type { Book } from '@/types/book';
 import { BookOpen, Trash2, Calendar } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 /**
  * 书籍卡片组件 Props

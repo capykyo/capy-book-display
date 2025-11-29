@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import {
   getAllProgress,
-  getProgress,
   saveProgress as saveProgressToStorage,
   updateProgress as updateProgressInStorage,
   removeProgress as removeProgressFromStorage,

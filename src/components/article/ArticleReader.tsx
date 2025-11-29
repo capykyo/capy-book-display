@@ -36,11 +36,13 @@ export function ArticleReader({ url, className }: ArticleReaderProps) {
   const [currentUrl, setCurrentUrl] = useState<string>(url);
 
   // 当外部传入的 url prop 改变时，更新当前 URL
+  // 使用 useEffect 来同步 url prop 到 currentUrl 状态
   useEffect(() => {
-    if (url) {
+    if (url && url !== currentUrl) {
       setCurrentUrl(url);
     }
-  }, [url]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]); // 只依赖 url，避免循环更新
 
   // 加载文章
   useEffect(() => {
