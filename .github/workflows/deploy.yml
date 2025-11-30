@@ -1,0 +1,60 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_run:
+    workflows: ['CI']
+    types:
+      - completed
+    branches: [main, master]
+  # 允许手动触发部署
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    # 只有在 CI 工作流成功时才部署（或者手动触发）
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_API_URL_DEV: http://localhost:3000/api/extract
+          NEXT_PUBLIC_API_URL_PROD: https://capy-book-fetch.vercel.app/api/extract
+          NEXT_PUBLIC_JWT_TOKEN: ${{ secrets.NEXT_PUBLIC_JWT_TOKEN }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: capy-book-display
+          # Next.js 16 的输出目录
+          # 注意：如果使用静态导出，应该是 'out'，否则使用 '.next'
+          directory: .next
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          # 分支名称（用于预览部署）
+          branch: ${{ github.ref_name }}
+          # 可选：指定工作目录
+          workingDirectory: '.'
+

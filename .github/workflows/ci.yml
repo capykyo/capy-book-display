@@ -69,4 +69,5 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL_DEV: http://localhost:3000/api/extract
           NEXT_PUBLIC_API_URL_PROD: https://capy-book-fetch.vercel.app/api/extract
+          # 注意：JWT_TOKEN 不应该在 CI 中设置，只在部署时设置
 
