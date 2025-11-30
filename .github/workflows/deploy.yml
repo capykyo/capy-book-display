@@ -53,9 +53,9 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: capy-book-display
-          # Next.js 16 的输出目录
-          # 注意：如果使用静态导出，应该是 'out'，否则使用 '.next'
-          directory: .next
+          # Next.js 静态导出输出目录
+          # 使用 output: 'export' 时，输出目录是 'out'
+          directory: out
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           # 分支名称（用于预览部署）
           branch: ${{ github.ref_name }}

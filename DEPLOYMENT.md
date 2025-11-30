@@ -54,9 +54,11 @@
 3. **配置构建设置**
    - **Framework preset**: Next.js
    - **Build command**: `pnpm build`
-   - **Build output directory**: `.next`（Next.js 16 默认输出目录）
+   - **Build output directory**: `out`（Next.js 静态导出输出目录）
    - **Root directory**: `/`（项目根目录）
    - **Node.js version**: 20（推荐）
+   
+   **注意**：项目已配置为静态导出（`output: 'export'`），输出目录为 `out`，而不是 `.next`
 
 4. **配置环境变量**
    在 "Environment variables" 中添加：
