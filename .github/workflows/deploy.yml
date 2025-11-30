@@ -15,6 +15,10 @@ jobs:
   deploy:
     name: Deploy to Cloudflare Pages
     runs-on: ubuntu-latest
+    # 授予 GitHub Deployment 权限
+    permissions:
+      contents: read
+      deployments: write
     # 只有在 CI 工作流成功时才部署（或者手动触发）
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
 
