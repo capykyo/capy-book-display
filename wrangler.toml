@@ -1,0 +1,32 @@
+# Wrangler 配置文件
+# 用于 Cloudflare Workers 部署（通过 @opennextjs/cloudflare）
+# 
+# 注意：@opennextjs/cloudflare 的 deploy 命令会自动使用此配置文件
+# Worker 入口点由 opennextjs-cloudflare build 生成在 .open-next/worker.js
+
+main = ".open-next/worker.js"
+name = "capy-book-display"
+compatibility_date = "2026-01-12"
+compatibility_flags = ["nodejs_compat"]
+
+# 静态资源目录
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# 环境变量配置
+# 注意：敏感信息（如 INITIAL_JWT_TOKEN）应该通过 Cloudflare Dashboard 或 GitHub Secrets 设置
+# 这里只配置非敏感的环境变量或默认值
+[vars]
+# 生产环境 API URL（可以通过环境变量覆盖）
+NEXT_PUBLIC_API_URL_PROD = "https://capy-book-fetch.vercel.app/api/extract"
+# 开发环境 API URL（通常只在本地开发时使用）
+NEXT_PUBLIC_API_URL_DEV = "http://localhost:3000/api/extract"
+
+# 生产环境配置
+[env.production]
+vars = { NEXT_PUBLIC_API_URL_PROD = "https://capy-book-fetch.vercel.app/api/extract" }
+
+# 预览环境配置
+[env.preview]
+vars = { NEXT_PUBLIC_API_URL_PROD = "https://capy-book-fetch.vercel.app/api/extract" }

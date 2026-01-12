@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Workers
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Cloudflare Pages
+    name: Deploy to Cloudflare Workers
     runs-on: ubuntu-latest
     # 授予 GitHub Deployment 权限
     permissions:
@@ -40,25 +40,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build application
-        run: pnpm build
+      - name: Deploy to Cloudflare Workers
+        run: pnpm run deploy
         env:
+          # Cloudflare 认证信息（@opennextjs/cloudflare 使用 wrangler，需要这些环境变量）
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Next.js 环境变量
           NEXT_PUBLIC_API_URL_DEV: http://localhost:3000/api/extract
           NEXT_PUBLIC_API_URL_PROD: https://capy-book-fetch.vercel.app/api/extract
           NEXT_PUBLIC_JWT_TOKEN: ${{ secrets.NEXT_PUBLIC_JWT_TOKEN }}
-
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: capy-book-display
-          # Next.js 静态导出输出目录
-          # 使用 output: 'export' 时，输出目录是 'out'
-          directory: out
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          # 分支名称（用于预览部署）
-          branch: ${{ github.ref_name }}
-          # 可选：指定工作目录
-          workingDirectory: '.'
+          # API 路由需要的 JWT Token（如果 API 路由需要）
+          INITIAL_JWT_TOKEN: ${{ secrets.NEXT_PUBLIC_JWT_TOKEN }}
 
